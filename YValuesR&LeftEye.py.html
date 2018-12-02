@@ -1,0 +1,55 @@
+
+# coding: utf-8
+
+# In[2]:
+
+
+import dlib
+import numpy as np
+from skimage import io
+
+predictor_path = "/Users/sofielysenko/Documents/shape_predictor_68_face_landmarks.dat"
+
+detector = dlib.get_frontal_face_detector()
+predictor = dlib.shape_predictor(predictor_path)
+
+img = io.imread("/Users/sofielysenko/Downloads/City_Infant_Face_Database/Black and White/B1NegBW.bmp")
+
+dets = detector(img)
+
+#output face landmark points inside retangle
+#shape is points datatype
+#http://dlib.net/python/#dlib.point
+for k, d in enumerate(dets):
+    shape = predictor(img, d)
+
+RIGHT_EYE_TOP_POINTS = list(range(36, 39))  
+LEFT_EYE_TOP_POINTS = list(range(42, 45))
+
+vec = np.empty([68, 1], dtype = int)
+for b in range(68):
+    vec[b][0] = shape.part(b).y
+    #vec[b][1] = shape.part(b).y
+    
+#del vec[0:36]
+#del vec[40:42]
+#del vec[46:]
+
+vecL = vec[36:40]
+vecR = vec[42:46]
+
+np.savetxt('1npL.csv', vecL, fmt='%.2f', delimiter=',', header="L_Eye")
+np.savetxt('1npR.csv', vecR, fmt='%.2f', delimiter=',', header="R_Eye")
+
+print(vecL)
+print(vecR)
+
+#have four loop that runs through all images in database and adds y values + neutral/positive/negative as another column 
+#need to be combined
+#this goes through already constructed algorithm
+
+
+#function - curve 
+# LEye, REye
+#Bottom, Top 
+

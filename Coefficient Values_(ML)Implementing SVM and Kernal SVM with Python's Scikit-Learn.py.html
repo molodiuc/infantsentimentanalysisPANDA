@@ -1,0 +1,172 @@
+
+# coding: utf-8
+
+# In[6]:
+
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+get_ipython().run_line_magic('matplotlib', 'inline')
+
+bankdata = pd.read_csv("/Users/sofielysenko/Downloads/Emotion_DataBaseTest1 - Sheet1-3.csv")  # Reading the data in with pandas
+
+
+# In[7]:
+
+
+bankdata.shape # rows, columns
+
+
+# In[8]:
+
+
+bankdata.head() # see what data actually looks like
+
+
+# In[5]:
+
+
+#Data Preprocessing
+#(1) Divide the data into attributes and labels
+#(2) Divide the data into training and testing sets
+
+
+# In[11]:
+
+
+X = bankdata.drop('Emotion', axis=1)   # removing the Class column bc that is labels
+y = bankdata['Emotion'] # only Class column
+
+
+# In[12]:
+
+
+from sklearn.model_selection import train_test_split  # split into testing and training sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.20)  
+
+
+# In[13]:
+
+
+#Training the Algo
+
+from sklearn.svm import SVC  
+svclassifier = SVC(kernel='linear')
+svclassifier.fit(X_train, y_train)  
+
+
+# In[34]:
+
+
+# Making Predictions
+y_pred = svclassifier.predict(X_test)  
+
+
+# In[9]:
+
+
+#Evaluating the Algo
+#Confusion matrix, precision, recall, and F1 measures are the most commonly used metrics for classification tasks
+from sklearn.metrics import classification_report, confusion_matrix  
+print(confusion_matrix(y_test,y_pred))  
+print(classification_report(y_test,y_pred))  
+
+
+# In[18]:
+
+
+#Implementing Kernel SVM with Scikit-Learn
+
+
+# In[26]:
+
+
+import numpy as np  
+import matplotlib.pyplot as plt  
+import pandas as pd  
+
+
+# In[3]:
+
+
+#Importing the Dataset
+url = "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data"
+
+# Assign colum names to the dataset
+colnames = ['sepal-length', 'sepal-width', 'petal-length', 'petal-width', 'Class']
+
+# Read dataset to pandas dataframe
+irisdata = pd.read_csv(url, names=colnames)  
+
+
+# In[4]:
+
+
+#Preprocessing
+X = irisdata.drop('Class', axis=1)  
+y = irisdata['Class']  
+
+
+# In[6]:
+
+
+#Train Test Split
+from sklearn.model_selection import train_test_split  
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.20)  
+
+
+# In[10]:
+
+
+#1. Polynomial Kernel
+
+from sklearn.svm import SVC  
+svclassifier = SVC(kernel='poly', degree=8)  
+svclassifier.fit(X_train, y_train)  
+
+#Making predictions
+y_pred = svclassifier.predict(X_test)  
+
+#Evaluate 
+from sklearn.metrics import classification_report, confusion_matrix  
+print(confusion_matrix(y_test, y_pred))  
+print(classification_report(y_test, y_pred))  
+
+
+# In[11]:
+
+
+#2. Gaussian Kernel
+#(different setup)
+from sklearn.svm import SVC  
+svclassifier = SVC(kernel='rbf')  
+svclassifier.fit(X_train, y_train)  
+
+#Prediction (same)
+y_pred = svclassifier.predict(X_test)  
+
+#Evaluate (same)
+from sklearn.metrics import classification_report, confusion_matrix  
+print(confusion_matrix(y_test, y_pred))  
+print(classification_report(y_test, y_pred))  
+
+
+# In[20]:
+
+
+#3. Sigmoid Kernel
+from sklearn.svm import SVC  
+svclassifier = SVC(kernel='sigmoid')  
+svclassifier.fit(X_train, y_train)  
+
+y_pred = svclassifier.predict(X_test)  
+
+from sklearn.metrics import classification_report, confusion_matrix  
+print(confusion_matrix(y_test, y_pred))  
+print(classification_report(y_test, y_pred))  
+
+
+# ## If we compare the performance of the different types of kernels we can clearly see that the sigmoid kernel performs the worst. This is due to the reason that sigmoid function returns two values, 0 and 1, therefore it is more suitable for binary classification problems. However, in our case we had three output classes
+
+# # Amongst the Gaussian kernel and polynomial kernel, we can see that Gaussian kernel achieved a perfect 100% prediction rate while polynomial kernel misclassified one instance. Therefore the Gaussian kernel performed slightly better. However, there is no hard and fast rule as to which kernel performs best in every scenario. It is all about testing all the kernels and selecting the one with the best results on your test dataset.
