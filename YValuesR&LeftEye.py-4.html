@@ -1,0 +1,419 @@
+
+# coding: utf-8
+
+# In[ ]:
+
+
+#Original Code
+import dlib
+import cv2
+import numpy as np
+from skimage import io
+
+predictor_path = "/Users/sofielysenko/Documents/shape_predictor_68_face_landmarks.dat"
+
+detector = dlib.get_frontal_face_detector()
+predictor = dlib.shape_predictor(predictor_path)
+
+img = io.imread("/Users/sofielysenko/Downloads/City_Infant_Face_Database/Black and White/B1NegBW.bmp")
+
+dets = detector(img)
+
+#output face landmark points inside retangle
+#shape is points datatype
+#http://dlib.net/python/#dlib.point
+for k, d in enumerate(dets):
+    shape = predictor(img, d)
+
+RIGHT_EYE_TOP_POINTS = list(range(36, 39))  
+LEFT_EYE_TOP_POINTS = list(range(42, 45))
+
+vec = np.empty([68, 1], dtype = int)
+for b in range(68):
+    vec[b][0] = shape.part(b).y
+    #vec[b][1] = shape.part(b).y
+    
+#del vec[0:36]
+#del vec[40:42]
+#del vec[46:]
+
+vecL = vec[36:40]
+vecR = vec[42:46]
+
+np.savetxt('1npL.csv', vecL, fmt='%.2f', delimiter=',', header="L_Eye")
+np.savetxt('1npR.csv', vecR, fmt='%.2f', delimiter=',', header="R_Eye")
+
+print(vecL)
+print(vecR)
+
+#have four loop that runs through all images in database and adds y values + neutral/positive/negative as another column 
+#need to be combined
+#this goes through already constructed algorithm
+
+#Pandas tutorials for grouping and aggregation of data 
+
+#function - curve 
+# LEye, REye
+#Bottom, Top 
+
+
+# In[50]:
+
+
+
+
+# FULL CODE
+import dlib
+import numpy as np
+from skimage import io
+from matplotlib import pyplot, transforms
+
+import csv
+Image, Emotion, eye_bottom = 'Image', 'Emotion', 'm_bottom'
+csvRow = [Image, Emotion, eye_bottom]
+csvfile = "test.csv"
+   
+# with open(csvfile, "a") as fp:
+#     wr = csv.writer(fp, dialect='excel')
+#     wr.writerow(csvRow)
+
+data_pos = ["B1PosBW","B2PosBW", "B3PosBW", "B4PosBW", "B5PosBW", "B5PosBW", "B3PosBW", "B4PosBW", "B5PosBW", "B6PosBW", "B7PosBW", "B9PosBW", "B10PosBW", "B11PosBW", "B12PosBW", "B13PosBW","B14PosBW", "B15PosBW", "B16PosBW", "B18PosBW", "B19PosBW", "B20PosBW", "B21PosBW", "B22PosBW", "B23PosBW", "B24PosBW", "B26PosBW", "B27PosBW", "B28PosBW", "B29PosBW", "B30PosBW","B33PosBW", "G1PosBW", "G2PosBW", "G4PosBW", "G5PosBW", "G6PosBW", "G8PosBW", "G10PosBW", "G11PosBW", "G12PosBW", "G13PosBW", "G14PosBW", "G15PosBW", "G16PosBW", "G17PosBW", "G18PosBW", "G19PosBW", "G20PosBW", "G21PosBW", "G22PosBW", "G23PosBW", "G25PosBW", "G26PosBW", "G27PosBW", "G29PosBW", "G31PosBW", "G32PosBW", "G33PosBW", "G34PosBW", "G35PosBW"]
+data_neg = ["B1NegBW","B2NegBW", "B3NegBW", "B4NegBW", "B5NegBW", "B6NegBW", "B7NegBW", "B9NegBW", "B10NegBW", "B11NegBW", "B12NegBW", "B13NegBW","B14NegBW", "B15NegBW", "B17NegBW", "B18NegBW", "B19NegBW", "B20NegBW", "B21NegBW", "B25NegBW", "B26NegBW", "B27NegBW", "B28NegBW", "B29NegBW", "B30NegBW","G2NegBW", "G4NegBW", "G6NegBW", "G8NegBW", "G9NegBW", "G10NegBW", "G12NegBW", "G13NegBW", "G14NegBW", "G15NegBW", "G16NegBW", "G17NegBW", "G18NegBW", "G19NegBW", "G24NegBW", "G25NegBW", "G26NegBW", "G27NegBW", "G29NegBW", "G30NegBW", "G32NegBW", "G33NegBW", "G34NegBW", "G35NegBW"]
+data_neu = ["B2NeuBW", "B5NeuBW","B7NeuBW", "B8NeuBW", "B9NeuBW", "B10NeuBW", "B14NeuBW", "B16NeuBW","B18NeuBW", "B21NeuBW", "B24NeuBW", "B25NeuBW","B28NeuBW","B32NeuBW","B33NeuBW","G2NeuBW", "G3NeuBW", "G4NeuBW", "G5NeuBW", "G6NeuBW", "G7NeuBW","G8NeuBW", "G12NeuBW", "G13NeuBW", "G14NeuBW", "G15NeuBW",  "G17NeuBW", "G19NeuBW", "G23NeuBW", "G24NeuBW", "G25NeuBW", "G26NeuBW", "G29NeuBW",  "G31NeuBW", "G32NeuBW", "G34NeuBW"]
+
+#data_full = data_pos + data_neg + data_neu
+data_full = ["B1PosBW"]
+predictor_path = "/Users/sofielysenko/Documents/shape_predictor_68_face_landmarks.dat"
+
+
+myFile = open('test.csv', 'w')  
+with myFile:  
+    myFields = ['Image','Emotion', 'm_bottom']
+    writer = csv.DictWriter(myFile, fieldnames=myFields)    
+    writer.writeheader()
+        
+for i in range(len(data_full)):
+    img = io.imread("/Users/sofielysenko/Downloads/City_Infant_Face_Database/Black and White/"+ data_full[i]+".bmp")
+        
+    detector = dlib.get_frontal_face_detector()
+    predictor = dlib.shape_predictor(predictor_path)
+
+    dets = detector(img)
+
+    RIGHT_EYE_TOP_POINTS = list(range(42, 46))  
+    LEFT_EYE_TOP_POINTS = list(range(42, 46))
+
+
+#output face landmark points inside retangle
+#shape is points datatype
+#http://dlib.net/python/#dlib.point
+    for k, d in enumerate(dets):
+        shape = predictor(img, d)
+
+    vec = np.empty([68, 2], dtype = int)
+    for b in range(68):
+        vec[b][0] = shape.part(b).x
+        vec[b][1] = shape.part(b).y
+    
+    #vec1 = vec[36:37]
+    #vec2 = vec[39:42]
+    
+    vecL = vec[36:40]
+    vecR = vec[36:]
+
+#np.savetxt('1npL.csv', vecL, fmt='%.2f', delimiter=',', header="L_Eye")
+#np.savetxt('1npR.csv', vecR, fmt='%.2f', delimiter=',', header="R_Eye")
+
+    print(vecL)
+    print(vecR)
+
+#PLOT X AND Y
+    import numpy as np
+    from matplotlib import pyplot as plt
+    
+    plt.figure()    
+    plt.axis([0, 1200, 0, 1200])     
+    plt.grid(False)  
+
+    x, y = vecL.T
+    print (vecL.T)
+    
+    ax=plt.gca()                            # get the axis
+    ax.set_ylim(ax.get_ylim()[::-1])        # invert the axis
+    ax.xaxis.tick_top()                     # and move the X-Axis      
+    #ax.yaxis.set_ticks(np.arange(0, 16, 1)) # set y-ticks
+    #ax.yaxis.tick_left()
+    plt.scatter(x,y)
+    
+    coeff = np.polyfit(x,y,2)
+
+    xx = np.arange(min(x),max(x),.1)
+    yy = xx**2*coeff[0] + xx*coeff[1] + coeff[2]
+
+#plt.plot(x,y, label='data')
+    plt.plot(xx,yy, label='fitted function')
+    plt.legend()
+    plt.show()
+
+    c = np.poly1d(coeff)
+    crit = c.deriv().r
+    r_crit = crit[crit.imag==0].real
+    test = c.deriv(2)(r_crit)
+    
+    print(data_full[i])
+    print("Concavity:")
+    print(test)
+    
+    filename = data_full[i] 
+    concavity = test
+    
+    
+    import csv
+    Image, eye_bottom, Emotion = 'Image', 'Emotion', 'm_bottom'
+    csvRow = [Image, Emotion, eye_bottom]
+    csvfile = "test.csv"
+   
+    with open(csvfile, "a") as fp:
+        wr = csv.writer(fp, dialect='excel')
+        wr.writerow([data_full[i], 'Negative', test])
+        
+
+    
+   
+
+
+#np.savetxt('Run1.csv', test, fmt='%.8f', delimiter=',', header="Concavity")
+
+
+# In[ ]:
+
+
+#PLOT X AND Y
+import numpy as np
+from matplotlib import pyplot as plt
+
+coeff = np.polyfit(x,y,2)
+
+x, y = vecL.T
+plt.scatter(x,y)
+
+xx = np.arange(200,350, .1)
+yy = xx**2*coeff[0] + xx*coeff[1] + coeff[2]
+
+#plt.plot(x,y, label='data')
+plt.plot(xx,yy, label='fitted function')
+plt.legend()
+plt.show()
+
+c = np.poly1d(coeff)
+crit = c.deriv().r
+r_crit = crit[crit.imag==0].real
+test = c.deriv(2)(r_crit)
+
+print("Concavity:")
+print(test)
+
+np.savetxt('test1.csv', test, fmt='%.6f', delimiter=',', header="Concavity")
+#ML on algorithm 
+#Fit curve
+#Derivative (3rd) - 
+
+
+# In[ ]:
+
+
+#VIEW IMAGE COPY
+
+#12/4/2018
+#(1) Curvature: Derivative; Known turning into equation (1st)
+# Plot points and fitted curve to see and if concavity value is consistent 
+# All data for all infants and plot coefficents (ex. left eye, right eye, mouth)
+# Then classifier 
+#Further work:
+# Movement of face; reliably get keypoints rel. and if different 
+# Kinematics or varied
+
+#(2) PCA Analysis is possible method: (tutorial) Keypoint values (x&y) and reduce their dimensions and it will tell how keypoints differ; 100 keypoints ex. enter 
+#May be that they are different 
+#Plot components one v. the other : color happy and sad as different 
+#Try PCA 
+
+#(3) TSNE Feature reduction technique 
+
+#(4) Algorithm: SVM; Decision trees (xgboost)
+
+#def functionname(dataframe):
+#output = ...
+#return output
+
+
+
+#Mass run on all data (Left eye)
+
+def functionname(dataframe):
+output = test
+return output
+
+dataframe.groupby('subject').apply(functionname)
+
+
+# In[ ]:
+
+
+x = np.arange(600)
+y = np.exp(x/300) + np.cos(x/30) + np.random.uniform(size=x.shape)  # simulated data
+
+slope = np.polyfit(x, y, 1)[0]
+concavity = np.polyfit(x, y, 2)[0]
+print(slope, concavity)
+plt.plot
+
+
+# In[ ]:
+
+
+# SEPERATE VISUAL OF POINTS
+import dlib
+import cv2
+import numpy as np
+from skimage import io
+
+image_path = "/Users/sofielysenko/Downloads/City_Infant_Face_Database/Black and White/B1NegBW.bmp"  
+cascade_path = "/anaconda3/pkgs/libopencv-3.4.1-h14a57ad_3/share/OpenCV/haarcascades/haarcascade_frontalface_default.xml"  
+predictor_path= "/Users/sofielysenko/Documents/shape_predictor_68_face_landmarks.dat"  
+   
+ # Create the haar cascade  
+faceCascade = cv2.CascadeClassifier(cascade_path)  
+   
+ # create the landmark predictor  
+predictor = dlib.shape_predictor(predictor_path)  
+   
+ # Read the image  
+image = cv2.imread(image_path)  
+ # convert the image to grayscale  
+gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)  
+   
+ # Detect faces in the image  
+faces = faceCascade.detectMultiScale(
+        gray,
+        scaleFactor=1.1,
+        minNeighbors=5,
+        minSize=(30, 30),
+        flags=cv2.CASCADE_SCALE_IMAGE
+    )
+   
+print("Found {0} faces!".format(len(faces)))  
+   
+# Draw a rectangle around the faces  
+for (x, y, w, h) in faces:  
+  cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)  
+   
+ # Converting the OpenCV rectangle coordinates to Dlib rectangle  
+dlib_rect = dlib.rectangle(int(x), int(y), int(x + w), int(y + h))  
+print (dlib_rect) 
+   
+detected_landmarks = predictor(image, dlib_rect).parts()  
+   
+landmarks = np.matrix([[p.x, p.y] for p in detected_landmarks])  
+   
+   # copying the image so we can see side-by-side  
+image_copy = image.copy()  
+   
+for idx, point in enumerate(landmarks):  
+    pos = (point[0, 0], point[0, 1])  
+   
+     # annotate the positions  
+    cv2.putText(image_copy, str(idx), pos,  
+        fontFace=cv2.FONT_HERSHEY_SIMPLEX,  
+        fontScale=0.4,  
+        color=(0, 0, 255))  
+   
+     # draw points on the landmark positions  
+    cv2.circle(image_copy, pos, 3, color=(0, 255, 255))  
+    
+
+#cv2.namedWindow('image',WINDOW_NORMAL)
+#cv2.resizeWindow('image', 600,600)
+#cv2.imshow("Faces found", image)  
+cv2.imshow("Landmarks found", image_copy)  
+cv2.waitKey(0)  
+
+
+# In[45]:
+
+
+#2nd derivative concavity 
+
+#here's code that estimates the 2nd derivative at the inflection point
+#when it's positive its convex (smile-like)
+#The variable 'test' gives you a variable that might map onto how happy/sad they are in a continuous way
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+x = [1,2,3,4]
+y=[10, 4, 4, 10]
+y=[9.8, 10,10,9.8]
+
+
+coeff = np.polyfit(x,y,2)
+
+xx = np.arange(1,4.1,.1)
+yy = xx**2*coeff[0] + xx*coeff[1] + coeff[2]
+
+plt.scatter(x,y, label='data')
+plt.plot(xx,yy, label='fitted function')
+plt.legend()
+plt.show()
+
+
+c = np.poly1d(coeff)
+crit = c.deriv().r
+r_crit = crit[crit.imag==0].real
+test = c.deriv(2)(r_crit)
+
+print("Concavity:")
+print(test)
+
+
+# In[22]:
+
+
+import numpy
+from matplotlib import pyplot, transforms
+
+data = [[1,2,3,4], [6,7,8,9]]
+
+# first of all, the base transformation of the data points is needed
+base = pyplot.gca().transData
+rot = transforms.Affine2D().rotate_deg(180)
+
+# define transformed line
+line = pyplot.plot(data, 'r--', transform= rot + base)
+# or alternatively, use:
+# line.set_transform(rot + base)
+
+pyplot.show()
+
+
+# In[28]:
+
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+plt.figure()    
+plt.axis([0, 16, 0, 16])     
+plt.grid(False)                         # set the grid
+data= [(8,2,'USA'), (2,8,'CHN')]
+
+for obj in data:
+    plt.text(obj[1],obj[0],obj[2])      # change x,y as there is no view() in mpl
+
+
+ax=plt.gca()                            # get the axis
+ax.set_ylim(ax.get_ylim()[::-1])        # invert the axis
+ax.xaxis.tick_top()                     # and move the X-Axis      
+ax.yaxis.set_ticks(np.arange(0, 16, 1)) # set y-ticks
+ax.yaxis.tick_left()
+
