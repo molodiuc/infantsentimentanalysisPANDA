@@ -1,0 +1,76 @@
+
+# coding: utf-8
+
+# In[16]:
+
+
+import matplotlib.pyplot as plt
+ 
+from sklearn.model_selection import train_test_split
+from sklearn.datasets import fetch_lfw_people
+from sklearn.metrics import classification_report
+from sklearn.decomposition import PCA
+from sklearn.neural_network import MLPClassifier
+ 
+ 
+# Load data
+
+data_pos = ["B1PosBW","B2PosBW", "B3PosBW", "B4PosBW", "B5PosBW", "B5PosBW", "B3PosBW", "B4PosBW", "B5PosBW", "B6PosBW", "B7PosBW", "B9PosBW", "B10PosBW", "B11PosBW", "B12PosBW", "B13PosBW","B14PosBW", "B15PosBW", "B16PosBW", "B18PosBW", "B19PosBW", "B20PosBW", "B21PosBW", "B22PosBW", "B23PosBW", "B24PosBW", "B26PosBW", "B27PosBW", "B28PosBW", "B29PosBW", "B30PosBW","B33PosBW", "G1PosBW", "G2PosBW", "G4PosBW", "G5PosBW", "G6PosBW", "G8PosBW", "G10PosBW", "G11PosBW", "G12PosBW", "G13PosBW", "G14PosBW", "G15PosBW", "G16PosBW", "G17PosBW", "G18PosBW", "G19PosBW", "G20PosBW", "G21PosBW", "G22PosBW", "G23PosBW", "G25PosBW", "G26PosBW", "G27PosBW", "G29PosBW", "G31PosBW", "G32PosBW", "G33PosBW", "G34PosBW", "G35PosBW"]
+data_neg = ["B1NegBW","B2NegBW", "B3NegBW", "B4NegBW", "B5NegBW", "B6NegBW", "B7NegBW", "B9NegBW", "B10NegBW", "B11NegBW", "B12NegBW", "B13NegBW","B14NegBW", "B15NegBW", "B17NegBW", "B18NegBW", "B19NegBW", "B20NegBW", "B21NegBW", "B25NegBW", "B26NegBW", "B27NegBW", "B28NegBW", "B29NegBW", "B30NegBW","G2NegBW", "G4NegBW", "G6NegBW", "G8NegBW", "G9NegBW", "G10NegBW", "G12NegBW", "G13NegBW", "G14NegBW", "G15NegBW", "G16NegBW", "G17NegBW", "G18NegBW", "G19NegBW", "G24NegBW", "G25NegBW", "G26NegBW", "G27NegBW", "G29NegBW", "G30NegBW", "G32NegBW", "G33NegBW", "G34NegBW", "G35NegBW"]
+data_neu = ["B2NeuBW", "B5NeuBW","B7NeuBW", "B8NeuBW", "B9NeuBW", "B10NeuBW", "B14NeuBW", "B16NeuBW","B18NeuBW", "B21NeuBW", "B24NeuBW", "B25NeuBW","B28NeuBW","B32NeuBW","B33NeuBW","G2NeuBW", "G3NeuBW", "G4NeuBW", "G5NeuBW", "G6NeuBW", "G7NeuBW","G8NeuBW", "G12NeuBW", "G13NeuBW", "G14NeuBW", "G15NeuBW",  "G17NeuBW", "G19NeuBW", "G23NeuBW", "G24NeuBW", "G25NeuBW", "G26NeuBW", "G29NeuBW",  "G31NeuBW", "G32NeuBW", "G34NeuBW"]
+
+data_full = data_pos + data_neg + data_neu
+
+for i in range(len(data_full)):
+    lfw_dataset = ("/Users/sofielysenko/Downloads/City_Infant_Face_Database/Black and White/" + data_full[i] + ".bmp")
+ 
+    _, h, w = lfw_dataset
+    X = lfw_dataset.data
+    y = lfw_dataset.target
+    target_names = ("Positive", "Negative", "Neutral")
+ 
+    # split into a training and testing set
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
+
+    # Compute a PCA 
+    n_components = 100
+    pca = PCA(n_components=n_components, whiten=True).fit(X_train)
+ 
+    # apply PCA transformation
+    X_train_pca = pca.transform(X_train)
+    X_test_pca = pca.transform(X_test)
+
+    # train a neural network
+    print("Fitting the classifier to the training set")
+    clf = MLPClassifier(hidden_layer_sizes=(1024,), batch_size=256, verbose=True, early_stopping=True).fit(X_train_pca, y_train)
+
+
+# In[7]:
+
+
+y_pred = clf.predict(X_test_pca)
+print(classification_report(y_test, y_pred, target_names=target_names))
+
+
+# In[8]:
+
+
+# Visualization
+def plot_gallery(images, titles, h, w, rows=3, cols=4):
+    plt.figure()
+    for i in range(rows * cols):
+        plt.subplot(rows, cols, i + 1)
+        plt.imshow(images[i].reshape((h, w)), cmap=plt.cm.gray)
+        plt.title(titles[i])
+        plt.xticks(())
+        plt.yticks(())
+ 
+def titles(y_pred, y_test, target_names):
+    for i in range(y_pred.shape[0]):
+        pred_name = target_names[y_pred[i]].split(' ')[-1]
+        true_name = target_names[y_test[i]].split(' ')[-1]
+        yield 'predicted: {0}\ntrue: {1}'.format(pred_name, true_name)
+ 
+prediction_titles = list(titles(y_pred, y_test, target_names))
+plot_gallery(X_test, prediction_titles, h, w)
+
